@@ -15,9 +15,12 @@
 
 </div>
 
-### Implementation
-<!--- Please refer to respective folders (`DDPM` and `SD`) for more details. ---> 
-Stay tuned. Coming Soon.
+### Implementations
+<!--- Please refer to respective folders (`DDPM` and `SD`) for more details. --->
+- (DDPM) Refer to the folder `DDPM` and follow the instructions provided in `README.md`.
+- (SD) Refer to the folder `SD` and follow the instructions provided in `README.md`.
+
+**Note:** This version provides an official preview of the experiments described in the paper. While it is intended for educational purposes and for interested readers, some details may differ from the final configurations. For precise experiment setups, including training protocols, evaluation procedures, and hyperparameters, please refer to our paper and future releases as they become available.  
 
 ### Citation
 ```

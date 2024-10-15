@@ -1,0 +1,82 @@
+data:
+    path: ./data
+    dataset: CIFAR10
+    image_size: 32
+    channels: 3
+    logit_transform: false
+    uniform_dequantization: false
+    gaussian_dequantization: false
+    random_flip: true
+    rescaled: true
+    num_workers: 4
+    n_classes: 10
+
+model:
+    type: sid
+    in_channels: 3
+    out_ch: 3
+    ch: 128
+    ch_mult: [1, 2, 2, 2]
+    num_res_blocks: 2
+    attn_resolutions: [16, ]
+    dropout: 0.1
+    var_type: fixedlarge
+    ema_rate: 0.9999
+    ema: true
+    resamp_with_conv: true
+    cond_drop_prob: 0.0
+
+diffusion:
+    beta_schedule: linear
+    beta_start: 0.0001
+    beta_end: 0.02
+    num_diffusion_timesteps: 1000
+
+training:
+    batch_size: 128
+    n_iters: 50000
+    snapshot_freq: 5000
+    early_stage_n_intervals: 15
+    log_freq: 50
+    visualization_samples: 100
+
+sampling:
+    batch_size: 128
+    last_only: true
+
+sg_optim:
+    weight_decay: 0.000
+    optimizer: "Adam"
+    lr: 0.00003
+    beta1: 0.0
+    beta2: 0.999
+    amsgrad: false
+    eps: 0.00000001  # 1e-8
+    grad_clip: 1.0
+
+g_optim:
+    weight_decay: 0.000
+    optimizer: "Adam"
+    lr: 0.00001
+    beta1: 0.0
+    beta2: 0.999
+    amsgrad: false
+    eps: 0.00000001  # 1e-8
+    grad_clip: 1.0
+
+distill:
+    alpha: 1.2
+    t_min: 38
+    t_init: 440
+    t_max: 712
+    sg_remain_coef: 1.0
+    sg_forget_coef: 0.01
+    g_remain_coef: 1.0
+    g_forget_coef: 0.01
+    label_to_override: 1
+    pseudo_label_type: "rand"
+    use_clf: false
+    clf_path: null
+    init_from_ema: true
+
+comments: nil

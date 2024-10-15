@@ -1,0 +1,16 @@
+.idea
+__pycache__
+.ipynb_checkpoint
+.DS_Store
+.vscode
+
+*.npz
+*.pt
+*.pkl
+*.pth
+*.tar.gz
+*.zip
+
+# Stable Diffusion
+SD/data/aesthetics_6_plus/aesthetics_6_plus.txt
+image_experiment/
