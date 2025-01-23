@@ -1,6 +1,6 @@
 <div align="center">
 
-##  Score Forgetting Distillation: A Swift, Data-Free Method for Machine Unlearning in Diffusion Models (SFD) <br><sub> Official PyTorch Implementation </sub>
+##  Score Forgetting Distillation: A Swift, Data-Free Method for Machine Unlearning in Diffusion Models (SFD) <br><sub> Official PyTorch Implementation of the ICLR 2025 Paper </sub>
 
 <img src="assets/teaser.jpg" width="2048px">
 

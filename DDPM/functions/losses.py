@@ -95,10 +95,11 @@ def sid_g_loss_conditional(
         with torch.no_grad():
             sg_e = sg_model(x, t.float(), sg_c, cond_drop_prob=cond_drop_prob, cond_drop_mask=cond_drop_mask, mode=mode,
                             cond_scale=cond_scale)
+            sg_x = (x - bb * sg_e) / aa
     else:
         sg_e = sg_model(x, t.float(), sg_c, cond_drop_prob=cond_drop_prob, cond_drop_mask=cond_drop_mask, mode=mode,
                         cond_scale=cond_scale)
-    sg_x = (x - bb * sg_e) / aa
+        sg_x = (x - bb * sg_e) / aa
     if p_c is None:
         assert clf is not None
         logits = clf(sg_x.add(1.).div(2.).clamp(0, 1))
@@ -113,18 +114,20 @@ def sid_g_loss_conditional(
         with torch.no_grad():
             p_e = p_model(x, t.float(), p_c, cond_drop_prob=cond_drop_prob, cond_drop_mask=cond_drop_mask, mode=mode,
                           cond_scale=cond_scale)
+            p_x = (x - bb * p_e) / aa
     else:
         p_e = p_model(x, t.float(), p_c, cond_drop_prob=cond_drop_prob, cond_drop_mask=cond_drop_mask, mode=mode,
                       cond_scale=cond_scale)
-    p_x = (x - bb * p_e) / aa
+        p_x = (x - bb * p_e) / aa
+
     with torch.no_grad():
         omega = (p_x - x0).abs_().float().mean(dim=[1, 2, 3], keepdim=True).clamp_(min=0.00001)
 
-    if use_diffinst and alpha == 1.0:
-        omega = 1.0
+    if use_diffinst or alpha == 1.0:
         loss = ((p_x - sg_x) * (sg_x - x0)).div(omega).sum(dim=(1, 2, 3))
     else:
         loss = ((p_x - sg_x) * ((p_x - x0) - alpha * (p_x - sg_x))).div(omega).sum(dim=(1, 2, 3))
+
     if keepdim:
         return loss
     else:
