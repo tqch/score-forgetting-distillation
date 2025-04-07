@@ -64,22 +64,21 @@ def load_sd15(pretrained_model_name_or_path, pretrained_vae_model_name_or_path, 
         subfolder="tokenizer",
         revision=revision,
         use_fast=False,
-        local_files_only=True,
     )
-    
+
     noise_scheduler = DDPMScheduler.from_pretrained(pretrained_model_name_or_path, subfolder="scheduler")
     if noise_scheduler.config.prediction_type == "v_prediction":
         noise_scheduler = DDIMScheduler.from_pretrained(pretrained_model_name_or_path, subfolder="scheduler")
         noise_scheduler.set_timesteps(noise_scheduler.config.num_train_timesteps)
     
     text_encoder = CLIPTextModel.from_pretrained(
-        pretrained_model_name_or_path, subfolder="text_encoder", revision=revision, variant=variant,)  # local_files_only=True,)
+        pretrained_model_name_or_path, subfolder="text_encoder", revision=revision, variant=variant,)
 
     vae = AutoencoderKL.from_pretrained(
-        pretrained_model_name_or_path, subfolder="vae", revision=revision, variant=variant,)  # local_files_only=True,)
+        pretrained_model_name_or_path, subfolder="vae", revision=revision, variant=variant,)
 
     unet = UNet2DConditionModel.from_pretrained(
-        pretrained_model_name_or_path, subfolder="unet", revision=revision, variant=variant,)  # local_files_only=True,)
+        pretrained_model_name_or_path, subfolder="unet", revision=revision, variant=variant,)
 
     # Freeze untrained components
     vae.eval().requires_grad_(False)

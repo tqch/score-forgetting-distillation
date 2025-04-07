@@ -17,7 +17,6 @@ import dnnlib
 
 from torch_utils import distributed as dist
 from training import training_loop
-import sys
 
 import warnings
 warnings.filterwarnings('ignore', 'Grad strides do not match bucket view strides') # False warning printed by PyTorch 1.12.
@@ -78,6 +77,17 @@ class CommaSeparatedList(click.ParamType):
             return []
         return value.split(',')
 
+
+class OptionalINT(click.ParamType):
+
+    name = 'int'
+    def convert(self, value, param, ctx):
+        _ = param, ctx
+        if value == '':
+            return None
+        else:
+            return int(value)
+
 #----------------------------------------------------------------------------
 
 
@@ -85,6 +95,7 @@ class CommaSeparatedList(click.ParamType):
 
 # Main options.gpu
 @click.option('--outdir',        help='Where to save the results', metavar='DIR',                   type=str, required=False)
+@click.option('--data',          help='Path to the dataset', metavar='ZIP|DIR',                     type=str, required=True)
 @click.option('--data_stat',     help='Path to the dataset stats', metavar='ZIP|DIR',               type=str, default=None)
 
 # Hyperparameters.
@@ -107,7 +118,7 @@ class CommaSeparatedList(click.ParamType):
 @click.option('--tick',          help='How often to print progress', metavar='KIMG',                type=click.IntRange(min=1), default=2, show_default=True)
 @click.option('--snap',          help='How often to save snapshots', metavar='TICKS',               type=click.IntRange(min=1), default=50, show_default=True)
 @click.option('--dump',          help='How often to dump state', metavar='TICKS',                   type=click.IntRange(min=1), default=100, show_default=True)
-@click.option('--seed',          help='Random seed  [default: random]', metavar='INT',              type=int)
+@click.option('--seed',          help='Random seed  [default: random]', metavar='INT',              type=OptionalINT())
 @click.option('--transfer',      help='Transfer learning from network pickle', metavar='PKL|URL',   type=str)
 @click.option('--resume',        help='Resume from previous training state', metavar='PT',          type=str)
 @click.option('-n', '--dry-run', help='Print training options and exit',                            is_flag=True)
@@ -167,15 +178,14 @@ def main(**kwargs):
     c.resolution=opts.resolution
 
     c.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, num_workers=opts.workers, prefetch_factor=2)
-    if opts.train_mode:
-        c.dataset_prompt_text_kwargs = dnnlib.EasyDict(class_name='training.aesthetics_dataset.ImageDataset', path=opts.data_prompt_text, resolution=opts.resolution, random_flip=opts.xflip, prompt_only=True)
-        c.forget_dataset_prompt_text_kwargs = dnnlib.EasyDict(
-            class_name='training.dataset.ForgetPromptDataset', resolution=opts.resolution,
-            path=opts.forget_data_prompt_text, path_to_val=opts.forget_data_prompt_text_val,
-            concept_to_forget=opts.concept_to_forget, concept_to_override=opts.concept_to_override,
-            path_to_override=opts.override_data_prompt_text,
-            path_to_pos=opts.pos_data_prompt_text, path_to_neg=opts.neg_data_prompt_text,
-        )
+    c.dataset_prompt_text_kwargs = dnnlib.EasyDict(class_name='training.aesthetics_dataset.ImageDataset', path=opts.data_prompt_text, resolution=opts.resolution, random_flip=opts.xflip, prompt_only=True)
+    c.forget_dataset_prompt_text_kwargs = dnnlib.EasyDict(
+        class_name='training.dataset.ForgetPromptDataset', resolution=opts.resolution,
+        path=opts.forget_data_prompt_text, path_to_val=opts.forget_data_prompt_text_val,
+        concept_to_forget=opts.concept_to_forget, concept_to_override=opts.concept_to_override,
+        path_to_override=opts.override_data_prompt_text,
+        path_to_pos=opts.pos_data_prompt_text, path_to_neg=opts.neg_data_prompt_text,
+    )
     c.network_kwargs = dnnlib.EasyDict()
     c.loss_kwargs = dnnlib.EasyDict()
 
@@ -191,10 +201,7 @@ def main(**kwargs):
 
     # Validate dataset options.
     try:
-        if opts.train_mode:
-            dataset_obj = dnnlib.util.construct_class_by_name(**c.dataset_prompt_text_kwargs)
-        else:
-            dataset_obj = dnnlib.util.construct_class_by_name(**c.dataset_kwargs)
+        dataset_obj = dnnlib.util.construct_class_by_name(**c.dataset_prompt_text_kwargs)
         dataset_name = dataset_obj.name
         data_max_size = len(dataset_obj) # be explicit about dataset size
     except IOError as err:
@@ -235,6 +242,7 @@ def main(**kwargs):
         desc += f'-{opts.desc}'
     
     print(opts.outdir)
+    print(opts.data)
 
     if dist.get_rank() != 0:
         c.run_dir = None
@@ -250,18 +258,13 @@ def main(**kwargs):
         c.run_dir = os.path.join(opts.outdir, f'{cur_run_id:05d}-{desc}')
         assert not os.path.exists(c.run_dir)
 
-    c.fake_score_use_lora = opts.fake_score_use_lora    
     c.pretrained_model_name_or_path = opts.sd_model
-    c.pretrained_vae_model_name_or_path = opts.sd_model
 
     c.cfg_train_fake = opts.cfg_train_fake
     c.cfg_eval_fake = opts.cfg_eval_fake
     c.cfg_eval_real = opts.cfg_eval_real
     c.num_steps = opts.num_steps
-    
-    c.train_mode = opts.train_mode
-    c.network_pkl = opts.network_pkl
-    
+
     c.enable_xformers = opts.enable_xformers
     c.gradient_checkpointing = opts.gradient_checkpointing
 
@@ -290,7 +293,6 @@ def main(**kwargs):
     dist.print0(f'tmin:                    {c.tmin}')
     dist.print0(f'precision:               {dtype_str}')
     dist.print0(f'pretrained_model_name_or_path: {c.pretrained_model_name_or_path}')
-    dist.print0(f'pretrained_vae_model_name_or_path: {c.pretrained_vae_model_name_or_path}')
 
     dist.print0(f'sg_remain_coef: {c.sg_remain_coef}')
     dist.print0(f'sg_forget_coef: {c.sg_forget_coef}')

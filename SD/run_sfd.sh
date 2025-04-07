@@ -46,7 +46,7 @@ echo "BATCH_SIZE:"$BATCH_SIZE
 echo "BATCH_SIZE_PER_GPU":$BATCH_SIZE_PER_GPU
 echo "SG_LEARNING_RATE:"$SG_LEARNING_RATE
 echo "G_LEARNING_RATE:"$G_LEARNING_RATE
-echo "RESUME_TRAINING:"${RESUME_TRAINING-None}
+echo "RESUME_TRAINING:""${RESUME_TRAINING:-None}"
 echo "FORGET_DATA_PROMPT_TEXT:"$FORGET_DATA_PROMPT_TEXT
 echo "FORGET_DATA_PROMPT_TEXT_VAL:"$FORGET_DATA_PROMPT_TEXT_VAL
 echo "CONCEPT_TO_FORGET:"$CONCEPT_TO_FORGET
@@ -61,7 +61,7 @@ echo "G_FORGET_COEF:"$G_FORGET_COEF
 echo "SID_W_NEG:"$SID_W_NEG
 echo "USE_NEG:"$USE_NEG
 echo "SG_W_OVERRIDE:"$SG_W_OVERRIDE
-echo "SEED:"$SEED
+echo "SEED:""${SEED:-None}"
 
 torchrun \
 --standalone \
@@ -69,7 +69,6 @@ torchrun \
     train.py \
     --outdir 'image_experiment/df2-stage2-train-runs/' \
     --data '/data/datasets/MS-COCO-256/val' \
-    --train_mode 1 \
     --cfg_train_fake 4.5 \
     --cfg_eval_fake 4.5 \
     --cfg_eval_real 4.5 \
